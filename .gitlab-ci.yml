@@ -3,9 +3,9 @@ cache:
   key:
     files:
       - package-lock.json
-    paths:
-      - node_modules/
-      - .npm/
+  paths:
+    - node_modules/
+    - .npm/
 
 stages:
   - validate
