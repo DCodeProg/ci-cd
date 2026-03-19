@@ -18,3 +18,8 @@ install:
   stage: .pre
   script:
     - npm ci
+
+lint:
+  stage: validate
+  script:
+    - npm run lint
