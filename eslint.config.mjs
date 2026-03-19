@@ -1,3 +1,4 @@
+// eslint.config.mjs
 import globals from "globals";
 import pluginJs from "@eslint/js";
 
