@@ -30,6 +30,7 @@ unit-test:
     - npm test
 
 release:
+  image: node:latest
   stage: release
   when: manual
   rules:
