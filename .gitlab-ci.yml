@@ -19,14 +19,18 @@ install:
   script:
     - npm ci
 
-lint:
-  stage: validate
+.defaults:
+  &skip-tag-release-rules
   rules:
     - if: '$CI_COMMIT_TAG != null'
       when: never
     - if: '$CI_COMMIT_TITLE =~ /^chore: release/'
       when: never
     - when: on_success
+
+lint:
+  stage: validate
+  <<: *skip-tag-release-rules
   script:
     - npm run lint
 
@@ -41,12 +45,7 @@ only-canary:
 
 unit-test:
   stage: test
-  rules:
-    - if: '$CI_COMMIT_TAG != null'
-      when: never
-    - if: '$CI_COMMIT_TITLE =~ /^chore: release/'
-      when: never
-    - when: on_success
+  <<: *skip-tag-release-rules
   script:
     - npm test
 
