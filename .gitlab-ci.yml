@@ -41,6 +41,15 @@ unit-test:
   script:
     - npm test
 
+e2e-test:
+  stage: test
+  rules:
+    - if: '$CI_MERGE_REQUEST_IID'
+      when: on_success
+    - when: never
+  script:
+    - echo "Hello E2E !"
+
 release:
   image: node:latest
   stage: release
