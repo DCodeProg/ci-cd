@@ -19,12 +19,11 @@ install:
   script:
     - npm ci
 
-.defaults:
-  &skip-tag-release-rules
+.defaults: &skip-tag-release-rules
   rules:
-    - if: '$CI_COMMIT_TAG != null'
+    - if: "$CI_COMMIT_TAG != null"
       when: never
-    - if: '$CI_COMMIT_TITLE =~ /^chore: release/'
+    - if: "$CI_COMMIT_TITLE =~ /^chore: release/"
       when: never
     - when: on_success
 
@@ -37,7 +36,7 @@ lint:
 only-canary:
   stage: validate
   rules:
-    - if: '$ENV_TARGET == "canary"'
+    - if: "$ENV_TARGET == \"canary\""
       when: on_success
     - when: never
   script:
@@ -49,12 +48,22 @@ unit-test:
   script:
     - npm test
 
+integration-test:
+  stage: test
+  <<: *skip-tag-release-rules
+  needs:
+    - unit-test
+  script:
+    - echo "Hello Integration !"
+
 e2e-test:
   stage: test
   rules:
-    - if: '$CI_MERGE_REQUEST_IID'
+    - if: "$CI_MERGE_REQUEST_IID"
       when: on_success
     - when: never
+  needs:
+    - integration-test
   script:
     - echo "Hello E2E !"
 
@@ -63,9 +72,8 @@ release:
   stage: release
   when: manual
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"
-        && $CI_COMMIT_TAG == null
-        && $CI_COMMIT_TITLE !~ /^chore(release): v/'
+    - if: "$CI_COMMIT_BRANCH == \"main\" && $CI_COMMIT_TAG == null && $CI_COMMIT_TITLE
+        !~ /^chore(release): v/"
   before_script:
     - git config user.email $GITLAB_USER_EMAIL
     - git config user.name $GITLAB_USER_NAME
