@@ -1,0 +1,124 @@
+name: github-ci
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+      
+  workflow_dispatch:
+    inputs:
+      run_release:
+        description: Run the manual release job
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      env_target:
+        description: Set to canary to run only-canary
+        required: false
+        default: ""
+        type: string
+
+jobs:
+  lint:
+    name: validate/lint
+    runs-on: ubuntu-latest
+    if: >-
+      ${{ !startsWith(github.event.head_commit.message || '', 'chore: release') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+  only-canary:
+    name: validate/only-canary
+    runs-on: ubuntu-latest
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.env_target == 'canary') || vars.ENV_TARGET == 'canary' }}
+    steps:
+      - run: echo "Hello Only Canary !"
+
+  unit-test:
+    name: test/unit
+    runs-on: ubuntu-latest
+    needs: lint
+    if: >-
+      ${{ !startsWith(github.event.head_commit.message || '', 'chore: release') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+  integration-test:
+    name: test/integration
+    runs-on: ubuntu-latest
+    needs: unit-test
+    if: >-
+      ${{ !startsWith(github.event.head_commit.message || '', 'chore: release') }}
+    steps:
+      - run: echo "Hello Integration !"
+
+  e2e-test:
+    name: test/e2e
+    runs-on: ubuntu-latest
+    needs: integration-test
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - run: echo "Hello E2E !"
+
+  release:
+    name: release/manual
+    runs-on: ubuntu-latest
+    needs: integration-test
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_release == 'true' && github.ref_name == 'main' }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure git user
+        run: |
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+          git config user.name "${{ github.actor }}"
+
+      - name: Release
+        run: npx --yes release-it --ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
